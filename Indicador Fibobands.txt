@@ -1,0 +1,62 @@
+//@version=5
+indicator("Fibobands – Sinais de Compra/Venda (Corrigido)", overlay=true, shorttitle="Fibobands SV")
+
+// ————— Parâmetros de Usuário —————
+length       = input.int(200,    title="Período (Length)", minval=1)
+src          = input.source(hlc3, title="Fonte (hlc3, close, etc.)")
+mult         = input.float(3.0,   title="Multiplicador de Desvio (Mult)", minval=0.001, step=0.1)
+
+fibComp      = input.float(0.618, title="Nível Fibonacci de Compra", step=0.001)
+fibVend      = input.float(0.382, title="Nível Fibonacci de Venda",   step=0.001)
+
+// ————— Cálculo das Bandas —————
+basis = ta.vwma(src, length)
+dev   = mult * ta.stdev(src, length)
+
+// Funções para banda superior e inferior em nível f
+upperBand(f) => basis + f * dev
+lowerBand(f) => basis - f * dev
+
+// Plotagem das bandas principais
+plot(basis, color=color.fuchsia,   title="Linha Central", linewidth=2)
+plot(upperBand(0.236), color=color.red, title="Fib 0.236", linewidth=1)
+plot(upperBand(0.382), color=color.red, title="Fib 0.382", linewidth=1)
+plot(upperBand(0.500), color=color.red, title="Fib 0.500", linewidth=1)
+plot(upperBand(0.618), color=color.red, title="Fib 0.618", linewidth=1)
+plot(upperBand(0.764), color=color.red, title="Fib 0.764", linewidth=1)
+plot(upperBand(1.000), color=color.red,   title="Fib 1.000", linewidth=2)
+
+plot(lowerBand(0.236), color=color.green, title="Fib 0.236 (B)", linewidth=1)
+plot(lowerBand(0.382), color=color.green, title="Fib 0.382 (B)", linewidth=1)
+plot(lowerBand(0.500), color=color.green, title="Fib 0.500 (B)", linewidth=1)
+plot(lowerBand(0.618), color=color.green, title="Fib 0.618 (B)", linewidth=1)
+plot(lowerBand(0.764), color=color.green, title="Fib 0.764 (B)", linewidth=1)
+plot(lowerBand(1.000), color=color.green, title="Fib 1.000 (B)", linewidth=2)
+
+// ————— Condições de Sinal —————
+longCondition  = ta.crossover(close, lowerBand(fibComp))
+shortCondition = ta.crossunder(close, upperBand(fibVend))
+
+// ————— Gatilhos de Alerta (constantes) —————
+alertcondition(longCondition,
+     title="Fibobands Compra",
+     message="⚡ Sinal de COMPRA Fibobands")
+alertcondition(shortCondition,
+     title="Fibobands Venda",
+     message="⚡ Sinal de VENDA Fibobands")
+
+// ————— Alertas Dinâmicos —————
+if longCondition
+    alert("⚡ Sinal de COMPRA: preço cruzou abaixo da banda Fib " + str.tostring(fibComp), alert.freq_once_per_bar)
+
+if shortCondition
+    alert("⚡ Sinal de VENDA: preço cruzou acima da banda Fib " + str.tostring(fibVend), alert.freq_once_per_bar)
+
+// ————— Plotagem de Setas —————
+plotshape(longCondition,  title="Sinal de Compra", location=location.belowbar,
+     style=shape.triangleup,   size=size.small, color=color.green,  offset=0)
+plotshape(shortCondition, title="Sinal de Venda",  location=location.abovebar,
+     style=shape.triangledown, size=size.small, color=color.red,    offset=0)
+
+
+-- Fibobands 100% funcional, melhor utilizar em tempos graficos maior que 30min.

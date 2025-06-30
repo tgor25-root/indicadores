@@ -1,0 +1,46 @@
+//@version=5
+indicator("Setup 9.1 - MME9", overlay=true)
+
+// Parâmetros
+length = input.int(9, title="Período da MME", minval=1)
+showSignals = input.bool(true, title="Mostrar Sinais")
+showLabels = input.bool(true, title="Mostrar Rótulos")
+highlightCandles = input.bool(true, title="Destacar Candles")
+
+// Cálculo da MME9
+ema9 = ta.ema(close, length)
+
+// Detectar mudança de direção da MME9
+ema9_slope = ema9 - ema9[1]
+ema9_slope_prev = ema9[1] - ema9[2]
+
+// Setup 9.1 de Compra: MME9 vira para cima após movimento de baixa
+buy_setup = ema9_slope > 0 and ema9_slope_prev <= 0
+buy_candle = buy_setup ? high : na
+buy_stop = buy_setup ? low : na
+
+// Setup 9.1 de Venda: MME9 vira para baixo após movimento de alta
+sell_setup = ema9_slope < 0 and ema9_slope_prev >= 0
+sell_candle = sell_setup ? low : na
+sell_stop = sell_setup ? high : na
+
+// Plotar a MME9
+plot(ema9, color=color.blue, title="MME 9", linewidth=2)
+
+// Plotar sinais
+plotshape(showSignals and buy_setup ? low : na, title="Sinal de Compra", location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
+plotshape(showSignals and sell_setup ? high : na, title="Sinal de Venda", location=location.abovebar, color=color.red, style=shape.triangledown, size=size.small)
+
+// Destacar candles de setup
+barcolor(highlightCandles and buy_setup ? color.new(color.green, 50) : highlightCandles and sell_setup ? color.new(color.red, 50) : na)
+
+// Adicionar rótulos
+if showLabels and buy_setup
+    label.new(bar_index, low, text="Compra\nStop: " + str.tostring(low, "#.##"), color=color.green, textcolor=color.white, style=label.style_label_up)
+
+if showLabels and sell_setup
+    label.new(bar_index, high, text="Venda\nStop: " + str.tostring(high, "#.##"), color=color.red, textcolor=color.white, style=label.style_label_down)
+
+// Alertas
+alertcondition(buy_setup, title="Alerta de Setup 9.1 de Compra", message="Setup 9.1 de Compra Detectado!")
+alertcondition(sell_setup, title="Alerta de Setup 9.1 de Venda", message="Setup 9.1 de Venda Detectado!")

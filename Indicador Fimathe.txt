@@ -1,0 +1,124 @@
+//@version=5
+indicator("Indicador Fimathe (Entradas e Saídas) - Corrigido", overlay=true)
+
+// =========================================================================
+// 1. INPUTS DO USUÁRIO (CONFIGURAÇÕES)
+// =========================================================================
+len_fast_ma = input.int(21, title="Período Média Rápida")
+len_slow_ma = input.int(50, title="Período Média Lenta")
+pivot_lookback = input.int(10, title="Períodos para Detecção de Pivô", tooltip="Um número maior detecta pivôs mais significativos.")
+
+// Cores
+color_uptrend = input.color(color.new(color.blue, 0), title="Cor Média Rápida (Alta)")
+color_downtrend = input.color(color.new(color.orange, 0), title="Cor Média Rápida (Baixa)")
+color_slow_ma = input.color(color.new(color.gray, 50), title="Cor Média Lenta")
+color_buy_signal = color.new(color.blue, 0)
+color_sell_signal = color.new(color.red, 0)
+color_target = color.new(color.green, 0)
+color_stop = color.new(color.maroon, 0)
+
+// =========================================================================
+// 2. CÁLCULOS PRINCIPAIS (MÉDIAS E PIVÔS)
+// =========================================================================
+ema_fast = ta.ema(close, len_fast_ma)
+ema_slow = ta.ema(close, len_slow_ma)
+
+plot(ema_fast, "Média Rápida", color = ema_fast > ema_slow ? color_uptrend : color_downtrend, linewidth=2)
+plot(ema_slow, "Média Lenta", color = color_slow_ma)
+
+pivot_high_price = ta.pivothigh(high, pivot_lookback, pivot_lookback)
+pivot_low_price = ta.pivotlow(low, pivot_lookback, pivot_lookback)
+
+// =========================================================================
+// 3. LÓGICA FIMATHE (GERENCIAMENTO DE ESTADO E SINAIS)
+// =========================================================================
+
+// --- LÓGICA DE COMPRA (LONG) ---
+var float long_leg_start_price = na
+var float long_leg_end_price = na
+
+if (pivot_low_price and ema_fast > ema_slow)
+    long_leg_start_price := pivot_low_price
+    long_leg_end_price := na 
+
+if (pivot_high_price and not na(long_leg_start_price) and ema_fast > ema_slow)
+    long_leg_end_price := pivot_high_price
+
+long_leg_range = long_leg_end_price - long_leg_start_price
+fib_long_50 = long_leg_end_price - long_leg_range * 0.50
+fib_long_618 = long_leg_end_price - long_leg_range * 0.618
+
+// Condição de Setup: o candle está na zona de correção de Fibo
+is_long_pullback_candle = not na(fib_long_50) and low <= fib_long_50 and close > fib_long_618 and ema_fast > ema_slow
+
+// Condição de Gatilho: o candle ATUAL rompe a máxima do candle de setup ANTERIOR.
+long_entry_trigger = is_long_pullback_candle[1] and high > high[1] and not is_long_pullback_candle
+
+// --- LÓGICA DE VENDA (SHORT) ---
+var float short_leg_start_price = na
+var float short_leg_end_price = na
+
+if (pivot_high_price and ema_fast < ema_slow)
+    short_leg_start_price := pivot_high_price
+    short_leg_end_price := na 
+    
+if (pivot_low_price and not na(short_leg_start_price) and ema_fast < ema_slow)
+    short_leg_end_price := pivot_low_price
+    
+short_leg_range = short_leg_start_price - short_leg_end_price
+fib_short_50 = short_leg_end_price + short_leg_range * 0.50
+fib_short_618 = short_leg_end_price + short_leg_range * 0.618
+
+// Condição de Setup: o candle está na zona de correção de Fibo
+is_short_pullback_candle = not na(fib_short_50) and high >= fib_short_50 and close < fib_short_618 and ema_fast < ema_slow
+
+// Condição de Gatilho: o candle ATUAL rompe a mínima do candle de setup ANTERIOR.
+short_entry_trigger = is_short_pullback_candle[1] and low < low[1] and not is_short_pullback_candle
+
+// =========================================================================
+// 4. PLOTAGEM DOS SINAIS, ALVOS E STOPS
+// =========================================================================
+
+// --- Sinais e Níveis de COMPRA ---
+var float long_entry_price = na
+var float long_stop_price = na
+var float long_target_price = na
+var bool  in_long_trade = false
+var float long_pullback_low = na
+
+if (long_entry_trigger and not in_long_trade)
+    in_long_trade := true
+    long_pullback_low := low[1]
+    long_entry_price := high[1] 
+    long_stop_price := long_pullback_low
+    long_target_price := long_pullback_low + (long_leg_end_price[1] - long_leg_start_price[1]) * 1.618
+
+if (in_long_trade and (high >= long_target_price or low <= long_stop_price))
+    in_long_trade := false
+
+plotshape(long_entry_trigger and not in_long_trade[1], "Compra", shape.triangleup, location.belowbar, color=color_buy_signal, size=size.small, text="COMPRA")
+plot(in_long_trade ? long_target_price : na, "Alvo Compra", color=color_target, style=plot.style_linebr, linewidth=2)
+plot(in_long_trade ? long_stop_price : na, "Stop Compra", color=color_stop, style=plot.style_linebr, linewidth=2)
+
+// --- Sinais e Níveis de VENDA ---
+var float short_entry_price = na
+var float short_stop_price = na
+var float short_target_price = na
+var bool  in_short_trade = false
+var float short_pullback_high = na
+
+if (short_entry_trigger and not in_short_trade)
+    in_short_trade := true
+    short_pullback_high := high[1]
+    short_entry_price := low[1]
+    short_stop_price := short_pullback_high
+    short_target_price := short_pullback_high - (short_leg_start_price[1] - short_leg_end_price[1]) * 1.618
+
+if (in_short_trade and (low <= short_target_price or high >= short_stop_price))
+    in_short_trade := false
+
+plotshape(short_entry_trigger and not in_short_trade[1], "Venda", shape.triangledown, location.abovebar, color=color_sell_signal, size=size.small, text="VENDA")
+plot(in_short_trade ? short_target_price : na, "Alvo Venda", color=color_target, style=plot.style_linebr, linewidth=2)
+plot(in_short_trade ? short_stop_price : na, "Stop Venda", color=color_stop, style=plot.style_linebr, linewidth=2)
+
+-- Fimathe 100% funcional, melhor utilizar em tempos graficos maior que 30min.
