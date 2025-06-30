@@ -1,0 +1,32 @@
+📌 Lista Completa de Estratégias com Opções
+🟩 Estratégias Direcionais (Alta ou Baixa)
+Estratégia	Objetivo	Envolve
+Compra de Call	Apostar na alta do ativo	Comprar call
+Compra de Put	Apostar na queda do ativo	Comprar put
+Venda Coberta	Gerar renda com ação que já possui	Vender call com ação em carteira
+Venda Descoberta	Apostar na queda (risco alto)	Vender call ou put sem ter o ativo
+
+🟨 Estratégias de Renda
+Estratégia	Objetivo	Envolve
+Venda Coberta de Call (Covered Call)	Gerar renda extra com ação estável	Comprar ação + Vender call
+Put Protegida (Protective Put)	Proteger posição comprada	Comprar ação + Comprar put
+Straddle Venda (Short Straddle)	Renda com mercado estável	Vender call + Vender put (mesmo strike)
+
+🟦 Estratégias de Volatilidade
+Estratégia	Objetivo	Envolve
+Straddle Compra (Long Straddle)	Lucrar com alta volatilidade	Comprar call + Comprar put (mesmo strike)
+Strangle Compra	Lucrar com volatilidade (mais barato)	Comprar call + Comprar put (strikes diferentes)
+Strangle Venda	Apostar em baixa volatilidade	Vender call + Vender put (strikes diferentes)
+
+🟥 Estratégias de Probabilidade/Neutralidade
+Estratégia	Objetivo	Envolve
+Butterfly Spread	Apostar em estabilidade com risco controlado	Combinação de 3 strikes (call ou put)
+Condor Spread	Igual ao butterfly, com strikes mais espaçados	4 opções com diferentes strikes
+Calendar Spread	Apostar em mudança de preço com o tempo (volatilidade implícita)	Comprar e vender opções com diferentes vencimentos
+
+🟧 Travas (Spreads) – Alta ou Baixa com Risco Limitado
+Estratégia	Objetivo	Envolve
+Trava de Alta (Bull Call Spread)	Apostar em alta moderada	Comprar call + Vender call strike maior
+Trava de Baixa (Bear Put Spread)	Apostar em baixa moderada	Comprar put + Vender put strike menor
+Trava de Alta com Puts	Estratégia inversa	Comprar put + Vender put (strike menor)
+Trava de Baixa com Calls	Estratégia inversa	Comprar call + Vender call (strike maior)

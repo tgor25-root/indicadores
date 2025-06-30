@@ -1,0 +1,47 @@
+//@version=6
+indicator(title="Índice Didi (Didi Index)", shorttitle="Didi Index", overlay=true)
+
+// --- INPUTS ---
+// Permite que o usuário altere os períodos das médias e a fonte de dados nas configurações do indicador.
+len_curta = input.int(3, title="Média Curta", minval=1)
+len_media = input.int(8, title="Média Média", minval=1)
+len_longa = input.int(20, title="Média Longa", minval=1)
+fonte = input.source(close, title="Fonte de Dados")
+
+// --- CÁLCULOS ---
+// Calcula as três médias móveis simples (SMA).
+ma_curta = ta.sma(fonte, len_curta)
+ma_media = ta.sma(fonte, len_media)
+ma_longa = ta.sma(fonte, len_longa)
+
+// --- PLOTAGEM DAS MÉDIAS MÓVEIS ---
+// Desenha as três médias no gráfico com cores distintas.
+plot(ma_curta, color=color.new(color.green, 0), title="Média Curta", linewidth=2)
+plot(ma_media, color=color.new(color.red, 0), title="Média Média", linewidth=2)
+plot(ma_longa, color=color.new(color.blue, 0), title="Média Longa", linewidth=2)
+
+// --- LÓGICA DO SINAL (AGULHADA) ---
+// Condição para a "Agulhada de Compra":
+// 1. A média curta (3) cruza para CIMA da média média (8).
+// 2. Ambas as médias (curta e média) estão ACIMA da média longa (20) no momento do cruzamento.
+bool agulhada_compra = ta.crossover(ma_curta, ma_media) and ma_curta > ma_longa and ma_media > ma_longa
+
+// Condição para a "Agulhada de Venda":
+// 1. A média curta (3) cruza para BAIXO da média média (8).
+// 2. Ambas as médias (curta e média) estão ABAIXO da média longa (20) no momento do cruzamento.
+bool agulhada_venda = ta.crossunder(ma_curta, ma_media) and ma_curta < ma_longa and ma_media < ma_longa
+
+// --- PLOTAGEM DOS SINAIS ---
+// Desenha uma forma no gráfico quando uma condição de agulhada é atendida.
+// Triângulo verde para cima para compra.
+plotshape(agulhada_compra, title="Sinal de Compra", location=location.belowbar, color=color.new(color.green, 0), style=shape.triangleup, size=size.small)
+// Triângulo vermelho para baixo para venda.
+plotshape(agulhada_venda, title="Sinal de Venda", location=location.abovebar, color=color.new(color.red, 0), style=shape.triangledown, size=size.small)
+
+// --- ALERTAS (Opcional) ---
+// Cria alertas que podem ser configurados no TradingView
+alertcondition(agulhada_compra, title="Alerta de Agulhada de Compra", message="Didi Index: Possível sinal de COMPRA")
+alertcondition(agulhada_venda, title="Alerta de Agulhada de Venda", message="Didi Index: Possível sinal de VENDA")
+
+
+

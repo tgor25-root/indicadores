@@ -1,0 +1,50 @@
+//@version=6
+indicator(title="Didi Index + Filtro de Volume", shorttitle="Didi+Vol", overlay=true)
+
+// --- INPUTS ---
+// Inputs da estratégia Didi Index original
+len_curta = input.int(3, title="Média Curta", minval=1, group="Configurações das Médias")
+len_media = input.int(8, title="Média Média", minval=1, group="Configurações das Médias")
+len_longa = input.int(20, title="Média Longa", minval=1, group="Configurações das Médias")
+fonte = input.source(close, title="Fonte de Dados", group="Configurações das Médias")
+
+// --- INPUTS DO FILTRO DE VOLUME ---
+usar_filtro_volume = input.bool(true, title="✔️ Usar Filtro de Volume?", group="Filtros")
+len_vol = input.int(20, title="Período da Média de Volume", minval=1, group="Filtros")
+
+// --- CÁLCULOS ---
+// Médias móveis do preço
+ma_curta = ta.sma(fonte, len_curta)
+ma_media = ta.sma(fonte, len_media)
+ma_longa = ta.sma(fonte, len_longa)
+
+// Média móvel do volume
+ma_volume = ta.sma(volume, len_vol)
+
+// --- PLOTAGEM DAS MÉDIAS MÓVEIS ---
+plot(ma_curta, color=color.new(color.green, 0), title="Média Curta", linewidth=2)
+plot(ma_media, color=color.new(color.red, 0), title="Média Média", linewidth=2)
+plot(ma_longa, color=color.new(color.blue, 0), title="Média Longa", linewidth=2)
+
+// --- LÓGICA DO SINAL (AGULHADA) ---
+// Condições originais do Didi Index
+condicao_compra = ta.crossover(ma_curta, ma_media) and ma_curta > ma_longa and ma_media > ma_longa
+condicao_venda = ta.crossunder(ma_curta, ma_media) and ma_curta < ma_longa and ma_media < ma_longa
+
+// Condição do filtro de volume
+volume_ok = volume > ma_volume
+
+// --- APLICAÇÃO DO FILTRO ---
+// A agulhada final só é válida se:
+// 1. O filtro de volume estiver desativado, OU
+// 2. A condição do volume for atendida (volume_ok)
+bool agulhada_compra = condicao_compra and (not usar_filtro_volume or volume_ok)
+bool agulhada_venda = condicao_venda and (not usar_filtro_volume or volume_ok)
+
+// --- PLOTAGEM DOS SINAIS ---
+plotshape(agulhada_compra, title="Sinal de Compra", location=location.belowbar, color=color.new(color.green, 0), style=shape.triangleup, size=size.small)
+plotshape(agulhada_venda, title="Sinal de Venda", location=location.abovebar, color=color.new(color.red, 0), style=shape.triangledown, size=size.small)
+
+// --- ALERTAS ---
+alertcondition(agulhada_compra, title="Alerta de Agulhada de Compra com Volume", message="Didi Index: Possível COMPRA com confirmação de volume")
+alertcondition(agulhada_venda, title="Alerta de Agulhada de Venda com Volume", message="Didi Index: Possível VENDA com confirmação de volume")
